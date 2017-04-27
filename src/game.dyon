@@ -1,0 +1,129 @@
+use criminal_mastermind::{run__intro_date_deadline_money_people_locations_quests_surprises} as game
+use criminal_mastermind::{state, surprise__chance_f, tell} as story
+use criminal_mastermind::{has_item, add_item} as inventory
+use quest as quest
+use date::{date__year_month_day as new__year_month_day} as date
+
+fn main() {
+    game::run(
+        intro: link {
+            "=== CRIMINAL MASTERMIND ENGINE 2016 ===\n"
+            " --        by Sven Nilsen         --\n"
+            "   ===============================\n"
+            "\n"
+            "This is a game where you make the map on paper,\n"
+            "and the computer generates characters and story.\n"
+            "\n"
+            "To learn how to draw a map, see tutorial.\n"
+            "\n"
+            "Locations:\n"
+            "- home\n"
+            "- church\n"
+            "- store\n"
+            "- school\n"
+            "- park\n"
+            "- farm\n"
+            "- hotel\n"
+            "- cemetery\n"
+            "\n"
+            "Put a brick at the home location to start the game.\n"
+            "...................................................\n"
+        },
+        date: date(year: 2016, month: 12, day: 1),
+        deadline: deadline(
+            date: date::new(year: 2016, month: 12, day: 24),
+            title: "Christmas"
+        ),
+        money: 0,
+        people: [
+            person(name: "Priest Jagner", likes: 0),
+            person(name: "Storekeeper Susan", likes: 0),
+        ],
+        locations: [
+            location(place: "church", name: "Priest Jagner"),
+            location(place: "store", name: "Storekeeper Susan"),
+            location(place: "school", name: "Choose"),
+            location(place: "park", name: "Groundkeeper Willy"),
+            location(place: "farm", name: "Farmer Billy"),
+            location(place: "hotel", name: "Butler Frances"),
+            location(place: "cemetery", name: "Ghost Drake"),
+        ],
+        quests: [
+            quest::tempted_candy(),
+            quest::broom(),
+            quest::naughty(),
+            quest::feed_pigs(),
+            quest::groundkeeper_willy_dies(),
+        ],
+        surprises: surprises(),
+    )
+}
+
+surprises() = [
+    story::surprise(chance: 1, f: \() ~ mut money = {
+        story::tell(link {"You found a 1$ bill."})
+        money += 1
+        true
+    }),
+    story::surprise(chance: 0.05, f: \() ~ mut money = {
+        story::tell(link {
+            "There is a hole in your pocket.\n"
+            "Your money are gone."
+        })
+        money = 0
+        true
+    }),
+    story::surprise(chance: 0.01, f: \() ~ mut money = {
+        story::tell(link {
+            "You find a suitcase with 1_000_000$.\n"
+        })
+        money += 1_000_000
+        true
+    }),
+    story::surprise(chance: 1, f: \() = {
+        story::tell(link {"You got a free ride to the closest location."})
+        true
+    }),
+    story::surprise(chance: 0.05, f: \() = {
+        if !inventory::has_item("bloody knife") {
+            story::tell(link {"You found a bloody knife."})
+            inventory::add_item("bloody knife")
+        }
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to school! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to the church! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to the store! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to the park! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to the hotel! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go to the farm! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.25, f: \() = {
+        story::tell(link {"Go home! (just an idea)"})
+        true
+    }),
+    story::surprise(chance: 0.05, f: \() = {
+        if !inventory::has_item("rope") {
+            story::tell(link {"You found some rope"})
+            inventory::add_item("rope")
+        }
+        true
+    }),
+]

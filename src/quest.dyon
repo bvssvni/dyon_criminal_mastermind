@@ -1,0 +1,174 @@
+ns quest
+
+use criminal_mastermind::{say, ask} as dialogue
+use criminal_mastermind::{tell, surprise__chance_f, new_quest, state, story_date} as story
+use criminal_mastermind::{has_item, add_item, remove_item, buy, inc_money} as inventory
+use criminal_mastermind::{inc, dec} as social
+
+broom() = {
+    store_has_broom: true,
+    got_money_for_broom: false,
+    home: \() = {
+        if !story::state("got_money_for_broom") {
+            story::tell("Mom gives you 10$ to buy a new broom at the store.")
+            inventory::inc_money(10)
+        }
+        if inventory::has_item("broom") {
+            inventory::remove_item("broom")
+            story::tell("You give mom the new broom.")
+            return true
+        }
+        false
+    },
+    store: \() ~ mut quest = {
+        date := story::story_date()
+        if date[2] < 4 {
+            dialogue::say("You can come back 4th December to get the new broom\n  your mom ordered.")
+        } else if quest.store_has_broom {
+            dialogue::say("Here is the new broom! That will be 10$.")
+            if money() < 10 {
+                story::tell("(you do not have enough money)")
+                dialogue::say("You should ask your mum!")
+            } else {
+                social::inc()
+                quest.store_has_broom = false
+                inventory::buy("broom", 10)
+            }
+        }
+        false
+    }
+}
+
+tempted_candy() = {
+    store: \() = {
+        story::tell(link {
+            "You see a lollipop in the store window.\n"
+            "It is big, and looks delicously sweet.\n"
+            "Could be yours for 10$.\n"
+        })
+        if money() >= 10 {
+            input := dialogue::ask("Do you want to buy the lollipop for 10$?", ["yes", "no"])
+            if input == "yes" {
+                inventory::buy("lollipop", 10)
+            }
+        }
+        false
+    }
+}
+
+black_eye_quest() = {
+    school: \() = {
+        story::tell(link {"The boy with black eye is crying."})
+        if inventory::has_item("lollipop") {
+            input := dialogue::ask("Give the boy with black eye the lollipop?", ["yes", "no"])
+            if input == "yes" {
+                inventory::remove_item("lollipop")
+                return true
+            }
+        }
+        false
+    }
+}
+
+naughty() = {
+    has_decided_to_fight_snowball_war: false,
+    fought_snowball_war: false,
+    priest_jagner_asked_whether_you_have_been_nice: false,
+    school: \() = {
+        if !story::state("has_decided_to_fight_snowball_war") {
+            story::tell(link {
+                "\n"
+                "The other kids are fighting snowball war.\n"
+                "Your mother told you not to fight, in case somebody gets hurt.\n"
+            })
+            input := dialogue::ask("Join them?", ["yes", "no"])
+            if input == "yes" {
+                _ := story::state("fought_snowball_war")
+                story::tell(link {
+                    "You throw a snowball way too hard in the face of a boy.\n"
+                    "He gets a black eye."
+                })
+                story::new_quest(black_eye_quest())
+            }
+        }
+        false
+    },
+    church: \() ~ quest = {
+        if !story::state("priest_jagner_asked_whether_you_have_been_nice") {
+            input := dialogue::ask("Have you been nice this year?", ["yes", "no"])
+            if (input == "yes") && quest.fought_snowball_war {
+                social::dec()
+                input := dialogue::ask("Are you sure?", ["yes", "hmm maybe not"])
+                if input == "yes" {
+                    social::dec()
+                } else {
+                    social::inc()
+                    dialogue::say("(patting your head) Don't worry.\n  I believe you will get a present from Santa this year.")
+                }
+            } else if input == "yes" {
+                social::inc()
+                dialogue::say("Good.")
+            } else if input == "no" {
+                dialogue::say("You will be put on Santa's naught list if you do not behave.")
+            }
+        }
+        true
+    }
+}
+
+feed_pigs() = {
+    farm: \() = {
+        input := dialogue::ask("Can you help me feed the pigs?", ["yes", "no"])
+        if input == "yes" {
+            story::tell(link {"2 hours later..."})
+            dialogue::say("Here have you 20$ for the work!")
+            inventory::inc_money(20)
+            social::inc()
+            story::new_quest(feed_hen())
+            return true
+        }
+        false
+    }
+}
+
+feed_hen() = {
+    farm: \() = {
+        input := dialogue::ask("Can you help me feed the hen?", ["yes", "no"])
+        if input == "yes" {
+            story::tell(link {"3 hours later..."})
+            dialogue::say("Here have you 30$ for the work!")
+            inventory::inc_money(30)
+            social::inc()
+            story::new_quest(feed_cows())
+            return true
+        }
+        false
+    }
+}
+
+feed_cows() = {
+    farm: \() = {
+        input := dialogue::ask("Can you help me feed the cows?", ["yes", "no"])
+        if input == "yes" {
+            story::tell(link {"4 hours later..."})
+            dialogue::say("Here have you 40$ for the work!")
+            inventory::inc_money(40)
+            social::inc()
+            return true
+        }
+        false
+    }
+}
+
+groundkeeper_willy_dies() = {
+    park: \() = {
+        date := story::story_date()
+        if date[2] >= 4 {
+            story::tell(link {"You found the dead body of groundkeeper Willy."})
+            return true
+        } else {
+            dialogue::say("Hey kid! Should you not be at school?")
+        }
+        false
+    }
+}

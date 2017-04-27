@@ -1,0 +1,251 @@
+ns criminal_mastermind
+
+use date::{date_format as format, sub_days} as date
+
+/// Start the adventure engine.
+///
+/// intro - Shown at the start of program.
+/// date - The date at start of the game.
+/// deadline - The date at end of the game.
+/// money - How much money to start with.
+/// people - List of start people and how much they like the player.
+/// locations - List of locations on the board (home is excluded).
+/// quests - Lists of active quests at start of the game.
+///
+/// Sets up current objects:
+///
+/// date - Current date in the game.
+/// money - How much money the player has.
+/// inventory - List of items the player carries.
+/// people - List of people.
+/// choices - List of all choices at map level.
+/// quests - List of active quests.
+///
+/// When quests are called, a current object `quest` is set up to refers
+/// to the current quest that is processed at a given location.
+/// This makes it possible to access and modify states of the quest.
+/// Also sets up current object `location`.
+fn run__intro_date_deadline_money_people_locations_quests_surprises(
+    intro: link,
+    date: [f64],
+    deadline: {},
+    money: f64,
+    people: [{}],
+    locations: [{}],
+    quests: [{}],
+    surprises: [\() -> bool],
+) {
+    println(intro)
+    sleep(0.5)
+
+    ~ date := date
+    ~ money := 0
+    ~ inventory := []
+    ~ people := people
+    ~ choices := sift i len(locations)+3 {
+        if i == 0 {"items"}
+        else if i == 1 {"empty"}
+        else if i == 2 {"home"}
+        else {locations[i-3].place}
+    }
+    for i {quests[i].finished := false}
+    ~ quests := quests
+
+    loop {
+        sleep(0.5)
+        println(link {
+            "--------------------------------------\n"
+            "Date: "date::format(date)"\n"
+            "Days left until "deadline.title": "date::sub_days(deadline.date, date)"\n"
+            "Money: "money"$\n"
+        })
+        roll := roll()
+        println(link {"Rolled: "roll})
+        println("")
+
+        input := choices(choices)
+
+        if input == "empty" {
+            for k 100 {
+                i := floor(random() * len(surprises))
+                if random() <= surprises[i].chance {
+                    _ := \surprises[i].f()
+                    break
+                }
+            }
+        } else if input == "items" {
+            println("\nItems:")
+            if len(inventory) == 0 {
+                println("(you have no items)")
+            }
+            for i {println(link {"- "inventory[i]})}
+            sleep(0.5)
+        } else if input == "home" {
+            ~ name := "Choose"
+            input := ask("Go to sleep?", ["yes", "no"])
+            if input == "yes" {
+                date[2] += 1
+            } else {
+                quest_location("home")
+            }
+        } else {
+            for i {
+                if locations[i].place == input {
+                    ~ name := locations[i].name
+                    quest_location(locations[i].place)
+                    break
+                }
+            }
+        }
+    }
+}
+
+/// Create a deadline.
+deadline__date_title(date: [f64], title: str) = {
+    date: clone(date),
+    title: clone(title)
+}
+
+/// Create a location.
+location__place_name(place: str, name: str) = {
+    place: clone(place),
+    name: clone(name)
+}
+
+/// Returns the date of the story.
+story_date() ~ date: [f64] = clone(date)
+
+/// Creates a person with name and how much your are liked.
+person__name_likes(name: str, likes: f64) = {
+    name: clone(name),
+    likes: clone(likes)
+}
+
+/// Rolls a 6-sided dice.
+roll() = floor(random() * 6) + 1
+
+/// Show choices for location type.
+fn choices(chs: [str]) -> str {
+    println("")
+    print("Choose: {")
+    for i {
+        print(chs[i])
+        if (i+1) < len(chs) {
+            print(", ")
+        }
+    }
+    println("}")
+    input := trim(read_line())
+    return if !any i {chs[i] == input} {choices(chs)}
+    else {clone(input)}
+}
+
+/// Increases like for person toward player.
+fn inc() ~ name: str, mut people: {} {
+    hit := any i {people[i].name == name}
+    if hit {
+        why := why(hit)
+        people[why[0]].likes += 1
+    } else {
+        println(link {"Error: Could not find person `"name"`"})
+    }
+}
+
+/// Decrease like for person toward player.
+fn dec() ~ name: str, mut people: {} {
+    hit := any i {people[i].name == name}
+    if hit {
+        why := why(hit)
+        people[why[0]].likes -= 1
+    } else {
+        println(link {"Error: Could not find person `"name"`"})
+    }
+}
+
+/// Non-player character says something.
+fn say(msg: str) ~ name: str {
+    println(link {"\n"name": "msg})
+    sleep(1.5)
+}
+
+/// Tell player something that takes some time to read.
+fn tell(msg: any) {
+    println(msg)
+    sleep(len(chars(str(msg))) / 30)
+}
+
+/// Non-player character asks something.
+fn ask(msg: str, chs: [str]) ~ name: str -> str {
+    print(link {"\n"name": "msg})
+    print(" {")
+    for i {
+        print(chs[i])
+        if (i+1) < len(chs) {print(", ")}
+    }
+    println("}")
+    input := trim(read_line())
+    return if !any i {chs[i] == input} {ask(msg, chs)}
+    else {clone(input)}
+}
+
+/// Sets state in question and returns old state.
+fn state(key: str) ~ mut quest: {} -> bool {
+    return = clone(quest[key])
+    quest[key] = true
+}
+
+/// Buy item at a price.
+/// Puts item in inventory and subtracts money.
+fn buy(item: str, price: f64) ~ mut inventory, mut money {
+    push(mut inventory, item)
+    money -= price
+}
+
+/// Returns the amount of money.
+money() ~ money: f64 = clone(money)
+
+/// Increases money with specified amount.
+fn inc_money(amount: f64) ~ mut money: f64 {
+    money += amount
+}
+
+/// Returns `true` if inventory contains item.
+has_item(name: str) ~ inventory = any i {inventory[i] == name}
+
+fn add_item(item: str) ~ mut inventory {push(mut inventory, item)}
+
+/// Removes item from inventory.
+fn remove_item(name: str) ~ mut inventory {
+    for i {
+        if inventory[i] == name {
+            swap(mut inventory, i, len(inventory)-1)
+            _ := pop(mut inventory)
+            return
+        }
+    }
+}
+
+/// Perform quest dialogues for a given location.
+fn quest_location(location: str) ~ mut quests {
+    ~ location := location
+    for i {
+        if !has(quests[i], location) {continue}
+        if quests[i].finished {continue}
+        ~ quest := quests[i]
+        quest.finished = \quest[location]()
+        quests[i] = clone(quest)
+    }
+}
+
+/// Create a new quest.
+/// Start it immediately.
+fn new_quest(quest: {}) ~ mut quests: [{}], location: str {
+    quest.finished := false
+    push(mut quests, quest)
+    ~ quest := quest
+    quest.finished = \quest[location]()
+    quests[len(quests)-1] = clone(quest)
+}
+
+/// Create a surprise object.
+surprise__chance_f(chance: f64, f: \() -> bool) = {chance: clone(chance), f: clone(f)}

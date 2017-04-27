@@ -1,0 +1,8 @@
+
+fn main() {
+    date := unwrap(load("src/date.dyon"))
+    crim := unwrap(load(source: "src/criminal_mastermind.dyon", imports: [date]))
+    quest := unwrap(load(source: "src/quest.dyon", imports: [crim]))
+    game := unwrap(load(source: "src/game.dyon", imports: [quest]))
+    call(game, "main", [])
+}
